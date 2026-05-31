@@ -1,60 +1,99 @@
 import os
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, request, jsonify, redirect, render_template_string
 from google import genai
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
 
-# --- CONFIGURATION ---
-# The Google GenAI SDK automatically reads the GEMINI_API_KEY environment variable.
-try:
-    ai_client = genai.Client()
-except Exception as e:
-    print(f"AI Initialization Warning: {e}")
-    ai_client = None
+WHATSAPP_NUMBER = "256700000000"  # Your WhatsApp Number
 
-# Your private WhatsApp number for receiving customer orders
-MY_WHATSAPP_NUMBER = "256700000000"  # Replace with your actual Uganda number format
+# Initialize Gemini
+api_key = os.getenv("GEMINI_API_KEY")
+client = genai.Client(api_key=api_key) if api_key else None
 
+# Your complete HTML embedded directly into the python file as a string
+HTML_LAYOUT = """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>BROOKSAUTOPLUG - AI Diagnostics</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; }
+        .box { border: 1px solid #ccc; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        input, textarea, button { width: 100%; padding: 10px; margin: 10px 0; }
+        button { background-color: #25D366; color: white; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>BROOKSAUTOPLUG</h1>
+    
+    <div class="box">
+        <h3>AI Vehicle Diagnostic Engine</h3>
+        <textarea id="issue" placeholder="Describe the car noise or problem..."></textarea>
+        <button onclick="runDiagnostic()">Analyze Issue</button>
+        <div id="result" style="margin-top: 15px; white-space: pre-wrap;"></div>
+    </div>
 
-# --- ROUTES ---
+    <div class="box">
+        <h3>Order Parts via WhatsApp</h3>
+        <form action="/order" method="POST">
+            <input type="text" name="part_name" placeholder="Part Name" required>
+            <input type="text" name="car_model" placeholder="Car Model" required>
+            <button type="submit">Send Order to WhatsApp</button>
+        </form>
+    </div>
 
-# 1. Home / Customer Interface
+    <script>
+        async function runDiagnostic() {
+            const desc = document.getElementById('issue').value;
+            const resultDiv = document.getElementById('result');
+            if(!desc) return alert('Please enter a description');
+            resultDiv.innerText = "Analyzing...";
+            const response = await fetch('/diagnose', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ description: desc })
+            });
+            const data = await response.json();
+            resultDiv.innerText = data.diagnostic || data.error;
+        }
+    </script>
+</body>
+</html>
+"""
+
 @app.route('/')
 def home():
-    return render_template('index.html')
+    # This renders the string directly without looking for an index.html file!
+    return render_template_string(HTML_LAYOUT)
 
-
-# 2. AI Diagnostic Endpoint
 @app.route('/diagnose', methods=['POST'])
 def diagnose_car():
-    if not ai_client:
-        return jsonify({"error": "AI service is currently unavailable. Check Render environment keys."}), 500
-        
+    if not client:
+        return jsonify({"error": "Gemini API key missing."}), 500
     data = request.json
-    customer_input = data.get("issue", "")
+    user_description = data.get('description', '')
     
-    if not customer_input:
-        return jsonify({"error": "Please describe the problem or noise your car is making."}), 400
-        
-    # Expert mechanic prompt guiding the engine to provide clear diagnostic breakdowns and Ugandan prices
-    prompt = f"Act as an expert car mechanic. A customer says: '{customer_input}'. Diagnose the issue, suggest solutions, and list common part replacements with estimated costs in Ugandan Shillings (UGX)."
+    prompt = f"You are the AI mechanic for BROOKSAUTOPLUG Uganda. Diagnose this issue: {user_description}. Provide causes, solutions, and estimated parts prices in UGX."
     
     try:
-        response = ai_client.models.generate_content(
-            model='gemini-2.0-flash',
-            contents=prompt
-        )
-        return jsonify({"diagnosis": response.text})
+        response = client.models.generate_content(model='gemini-2.5-flash', contents=prompt)
+        return jsonify({"diagnostic": response.text})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/order', methods=['POST'])
+def place_order():
+    part_name = request.form.get('part_name')
+    car_model = request.form.get('car_model')
+    message = f"Hello BROOKSAUTOPLUG, I would like to order a {part_name} for a {car_model}."
+    return redirect(f"https://api.whatsapp.com/send?phone={WHATSAPP_NUMBER}&text={request.utils.quote(message)}")
 
-# 3. Private Admin Panel (Secure baseline)
-@app.route('/admin-panel-secret')
+@app.route('/admin-panel-secure-xyz')
 def admin_panel():
-    # We will secure this route so only you can see store metrics and manage parts
-    return "<h1>BROOKSAUTOPLUG - Private Admin Dashboard</h1>"
-
+    return "<h1>BROOKSAUTOPLUG Private Admin Panel</h1>"
 
 if __name__ == '__main__':
     app.run(debug=True)
