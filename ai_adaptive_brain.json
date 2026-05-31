@@ -1,0 +1,20 @@
+{
+    "total_diagnoses_run": 3,
+    "learned_vocabulary": [],
+    "frequent_user_symptoms": {
+        "sheaking": 1,
+        "makinfg": 1,
+        "premio": 1,
+        "mode": 1,
+        "making": 1,
+        "pads": 1
+    },
+    "unresolved_terms_flagged_for_research": [
+        "sheaking",
+        "makinfg",
+        "premio",
+        "mode",
+        "making",
+        "pads"
+    ]
+}

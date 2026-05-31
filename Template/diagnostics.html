@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BROOKSAUTOPLUG - AI Diagnostic Garage</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        .diagnostic-container {
+            max-width: 800px;
+            margin: 40px auto;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        h2 {
+            color: #1a73e8;
+            margin-top: 0;
+        }
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #dadce0;
+            border-radius: 6px;
+            font-size: 15px;
+            resize: vertical;
+            box-sizing: border-box;
+            margin-bottom: 15px;
+        }
+        textarea:focus {
+            border-color: #1a73e8;
+            outline: none;
+        }
+        button {
+            background-color: #1a73e8;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background-color: #1557b0;
+        }
+        #loadingSpinner {
+            margin-top: 20px;
+            font-weight: bold;
+            color: #5f6368;
+        }
+        #diagnosticResult {
+            margin-top: 30px;
+            border: 1px solid #dadce0;
+            padding: 25px;
+            border-radius: 8px;
+            background: #fdfdfd;
+        }
+        .result-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+            margin-top: 15px;
+        }
+        .result-details {
+            flex: 1;
+            min-width: 280px;
+        }
+        .result-image-box {
+            flex: 0 0 220px;
+            text-align: center;
+        }
+        .result-image-box img {
+            width: 100%;
+            max-width: 220px;
+            height: auto;
+            border-radius: 8px;
+            border: 1px solid #chchch;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        .whatsapp-btn {
+            display: inline-flex;
+            align-items: center;
+            background-color: #25D366;
+            color: white;
+            text-decoration: none;
+            padding: 12px 20px;
+            font-weight: bold;
+            border-radius: 6px;
+            margin-top: 15px;
+            transition: background 0.2s;
+        }
+        .whatsapp-btn:hover {
+            background-color: #128C7E;
+        }
+    </style>
+</head>
+<body>
+
+<div class="diagnostic-container">
+    <h2>BROOKSAUTOPLUG AI Diagnostic Garage</h2>
+    <p>Explain the noise or issue your vehicle is experiencing. Our adaptive AI mechanic will identify the fault, estimate part costs, and link you directly to our repair team.</p>
+    
+    <textarea id="carIssueInput" rows="4" placeholder="e.g., My Toyota Premio is producing a clicking sound from the front wheels whenever I turn sharply..."></textarea>
+    <button id="diagnoseBtn" onclick="submitDiagnosis()">Run AI Diagnostic Engine</button>
+
+    <div id="loadingSpinner" style="display: none;">
+        ⏳ Analyzing mechanical data and sourcing part images... Please wait.
+    </div>
+
+    <div id="diagnosticResult" style="display: none;">
+        <h3 style="color: #1a73e8; margin-top: 0; border-bottom: 2px solid #1a73e8; padding-bottom: 8px;">Vehicle Diagnostic Assessment</h3>
+        
+        <div class="result-grid">
+            <div class="result-details">
+                <p><strong>Possible Fault Analysis:</strong> <br><span id="resDiagnosis"></span></p>
+                <p><strong>Required Spare Part:</strong> <span id="resPart" style="background: #e8f0fe; padding: 4px 8px; border-radius: 4px; font-weight: bold; color: #1a73e8;"></span></p>
+                <p><strong>Estimated Price (Local Market):</strong> <span id="resPrice" style="color: #28a745; font-weight: bold; font-size: 16px;"></span></p>
+                <p style="font-style: italic; color: #5f6368; background: #f1f3f4; padding: 12px; border-radius: 6px; border-left: 4px solid #1a73e8;" id="resPitch"></p>
+                
+                <a id="whatsappOrderBtn" href="#" target="_blank" class="whatsapp-btn">
+                    💬 Order Part / Request Mobile Repair via WhatsApp
+                </a>
+            </div>
+            
+            <div class="result-image-box">
+                <p style="font-size: 13px; font-weight: bold; margin-bottom: 8px; color: #5f6368;">Identified Part View</p>
+                <img id="resImage" src="" alt="Part Reference View">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Capture our configured WhatsApp contact endpoint rendered out cleanly by Flask context
+const targetWhatsAppNumber = "{{ whatsapp_number }}";
+
+function submitDiagnosis() {
+    const issueText = document.getElementById('carIssueInput').value;
+    const resultDiv = document.getElementById('diagnosticResult');
+    const spinner = document.getElementById('loadingSpinner');
+
+    if (!issueText.trim()) {
+        alert("Please provide a description of the symptoms first.");
+        return;
+    }
+
+    // Toggle viewport loader presence state
+    spinner.style.display = 'block';
+    resultDiv.style.display = 'none';
+
+    const formData = new FormData();
+    formData.append('car_issue', issueText);
+
+    fetch('/diagnose', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        spinner.style.display = 'none';
+        
+        if (!data.success) {
+            alert(data.error || "An error occurred during diagnostics.");
+            return;
+        }
+
+        // Fill data dynamically into the elements
+        document.getElementById('resDiagnosis').innerText = data.diagnosis;
+        document.getElementById('resPart').innerText = data.part;
+        document.getElementById('resPrice').innerText = data.price;
+        document.getElementById('resPitch').innerText = data.pitch;
+        
+        const partImage = document.getElementById('resImage');
+        partImage.src = data.image_url;
+        partImage.alt = "BROOKSAUTOPLUG reference imagery for " + data.part;
+
+        // --- WHATSAPP MESSAGE FORMATTING LOGIC ---
+        // We construct a structured order receipt format using neat line breaks (%0A)
+        const messageText = `Hello BROOKSAUTOPLUG! I just ran an AI diagnostic tool on my car.%0A%0A` +
+                            `*— ORDER DETAILS —*%0A` +
+                            `• *Original Issue:* ${encodeURIComponent(issueText)}%0A` +
+                            `• *Identified Part:* ${encodeURIComponent(data.part)}%0A` +
+                            `• *Estimated Cost:* ${encodeURIComponent(data.price)}%0A%0A` +
+                            `*— FIELD ASSISTANCE —*%0A` +
+                            `Please verify stock for this spare part and confirm availability for your mobile repair crew dispatch around town.`;
+
+        // Bind the clean global API chat link to our CTA anchor element
+        const whatsappLink = `https://wa.me/${targetWhatsAppNumber}?text=${messageText}`;
+        document.getElementById('whatsappOrderBtn').href = whatsappLink;
+
+        // Display results block cleanly
+        resultDiv.style.display = 'block';
+    })
+    .catch(error => {
+        spinner.style.display = 'none';
+        console.error('Error executing frontend endpoint logic:', error);
+        alert("Could not reach the diagnostic backend system right now.");
+    });
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BROOKSAUTOPLUG - Secure Admin Panel</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: #f1f5f9;
+            margin: 0;
+            padding: 0;
+        }
+        .header {
+            background-color: #0f172a;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 20px;
+        }
+        .logout-btn {
+            background-color: #ef4444;
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .logout-btn:hover {
+            background-color: #dc2626;
+        }
+        .main-content {
+            max-width: 1100px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .stat-card h3 {
+            margin-top: 0;
+            color: #64748b;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+        .stat-card p {
+            font-size: 28px;
+            font-weight: bold;
+            margin: 10px 0 0 0;
+            color: #0f172a;
+        }
+        .management-section {
+            background: white;
+            margin-top: 30px;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>BROOKSAUTOPLUG Private Owner Panel</h1>
+    <a href="/admin/logout" class="logout-btn">Secure Logout</a>
+</div>
+
+<div class="main-content">
+    
+    <!-- Business Metrics Overview -->
+    <div class="grid">
+        <div class="stat-card">
+            <h3>AI Engine Diagnostic Count</h3>
+            <p>Active & Learning</p>
+        </div>
+        <div class="stat-card">
+            <h3>Mobile Dispatches Sent</h3>
+            <p>Kampala Operations</p>
+        </div>
+        <div class="stat-card">
+            <h3>Target WhatsApp Gateway</h3>
+            <p style="font-size: 18px; color: #16a34a; word-break: break-all;">Connected Online</p>
+        </div>
+    </div>
+
+    <!-- Management Center -->
+    <div class="management-section">
+        <h2 style="margin-top: 0; color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">Operational Adjustments</h2>
+        <p>This panel is locked securely to your private machine context session. From here, you can eventually log specific product inventory lines, track custom local pricing parameters for diagnostic quotes, or keep tabs on your incoming WhatsApp mobile service dispatch queues.</p>
+        <p style="color: #64748b; font-size: 14px; font-style: italic;">System Status: Secure backend session handshake verified.</p>
+    </div>
+</div>
+
+</body>
+</html>
