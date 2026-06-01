@@ -17,7 +17,7 @@ app.secret_key = os.getenv("SECRET_KEY", "brookautoplug_secret_key_2026")
 
 WHATSAPP_NUMBER = "256794959101"
 
-# Standard baseline exchange rates for quick calculations (Can be manually tweaked)
+# Standard baseline exchange rates for quick calculations
 EXCHANGE_RATES = {
     "USD": 3750.0,  # 1 USD to UGX
     "KES": 28.5,    # 1 KES to UGX
@@ -86,46 +86,120 @@ HTML_LAYOUT = """
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BROOKSAUTOPLUG | Premium Auto Parts & AI Diagnostics</title>
+    <!-- Include Particles.js via CDN -->
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
     <style>
-        :root { --primary: #0d6efd; --success: #25D366; --dark: #0f172a; --light: #f8fafc; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: var(--light); color: var(--dark); }
-        header { background: linear-gradient(135deg, #0f172a, #1e3a8a); color: white; padding: 40px 20px; text-align: center; border-bottom: 5px solid var(--primary); }
-        header h1 { margin: 0; font-size: 2.5rem; letter-spacing: 2px; text-transform: uppercase; }
-        header p { margin: 5px 0 0 0; opacity: 0.9; font-size: 1.1rem; }
+        :root { 
+            --primary: #00f2fe; /* High-tech bright teal accent */
+            --success: #25D366; 
+            --dark: #0b0f19;    /* Deep charcoal background */
+            --card-bg: rgba(20, 27, 45, 0.85); /* Semi-transparent dark cards */
+            --light: #f8fafc; 
+        }
+        
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            background-color: var(--dark); 
+            color: #e2e8f0;
+            position: relative;
+        }
+
+        /* Particles Background Container fixed behind everything */
+        #particles-js {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 1; /* Sits completely in the background */
+            background-color: #0b0f19;
+        }
+
+        /* Push content wrappers above the background animations */
+        header, .container {
+            position: relative;
+            z-index: 2;
+        }
+
+        header { 
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 58, 138, 0.8)); 
+            color: white; 
+            padding: 40px 20px; 
+            text-align: center; 
+            border-bottom: 3px solid var(--primary); 
+            box-shadow: 0 4px 20px rgba(0, 242, 254, 0.15);
+        }
+        header h1 { margin: 0; font-size: 2.5rem; letter-spacing: 3px; text-transform: uppercase; color: #fff; text-shadow: 0 0 10px rgba(0,242,254,0.5); }
+        header p { margin: 5px 0 0 0; opacity: 0.9; font-size: 1.1rem; color: #94a3b8; }
+        
         .container { max-width: 1100px; margin: 30px auto; padding: 0 20px; }
         
         .grid { display: grid; grid-template-columns: 1fr; gap: 25px; margin-bottom: 40px; }
         @media (min-width: 992px) { .grid { grid-template-columns: 4fr 3fr 3fr; } }
         
-        .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); padding: 22px; display: flex; flex-direction: column; justify-content: space-between; }
-        .card h2 { margin-top: 0; color: #1e3a8a; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; font-size: 1.4rem; }
-        .card p { font-size: 0.95rem; color: #475569; line-height: 1.5; margin-bottom: 15px; }
+        /* Premium Frost/Glow Card Design */
+        .card { 
+            background: var(--card-bg); 
+            backdrop-filter: blur(8px); /* Frosted glass effect */
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px; 
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); 
+            padding: 22px; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-between; 
+        }
+        .card h2 { margin-top: 0; color: #00f2fe; border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 10px; font-size: 1.4rem; }
+        .card p { font-size: 0.95rem; color: #94a3b8; line-height: 1.5; margin-bottom: 15px; }
         
-        textarea, input { width: 100%; padding: 10px; margin: 8px 0; border-radius: 6px; border: 1px solid #cbd5e1; box-sizing: border-box; font-size: 0.95rem; }
+        textarea, input { 
+            width: 100%; 
+            padding: 12px; 
+            margin: 8px 0; 
+            border-radius: 6px; 
+            border: 1px solid rgba(255,255,255,0.1); 
+            background: rgba(15, 23, 42, 0.6);
+            color: #fff;
+            box-sizing: border-box; 
+            font-size: 0.95rem; 
+        }
+        textarea:focus, input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 8px rgba(0, 242, 254, 0.5);
+        }
+        
         button, .btn-wa { width: 100%; padding: 12px; border: none; border-radius: 6px; font-weight: bold; font-size: 1rem; cursor: pointer; transition: all 0.2s; text-align: center; box-sizing: border-box; }
         
-        .btn-ai { background-color: var(--primary); color: white; }
-        .btn-ai:hover { background-color: #0b5ed7; }
+        .btn-ai { background: linear-gradient(135deg, #0072ff, #00f2fe); color: white; }
+        .btn-ai:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0, 242, 254, 0.4); }
         .btn-wa { background-color: var(--success); color: white; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
-        .btn-wa:hover { background-color: #20ba5a; }
+        .btn-wa:hover { background-color: #20ba5a; transform: translateY(-2px); }
         
-        #result { background: #f1f5f9; padding: 15px; border-radius: 6px; margin-top: 15px; border-left: 4px solid var(--primary); white-space: pre-wrap; display: none; font-size: 0.95rem; }
+        #result { background: rgba(15, 23, 42, 0.8); color: #e2e8f0; padding: 15px; border-radius: 6px; margin-top: 15px; border-left: 4px solid var(--primary); white-space: pre-wrap; display: none; font-size: 0.95rem; }
         
-        .catalog-title { text-align: center; margin: 40px 0 20px 0; font-size: 2rem; color: #0f172a; }
+        .catalog-title { text-align: center; margin: 40px 0 20px 0; font-size: 2rem; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
         .catalog-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; }
-        .product-card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; display: flex; flex-direction: column; }
-        .product-image { width: 100%; height: 200px; object-fit: cover; background-color: #cbd5e1; }
+        .product-card { background: var(--card-bg); border-radius: 12px; overflow: hidden; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; }
+        .product-image { width: 100%; height: 200px; object-fit: cover; background-color: #1e293b; }
         .product-info { padding: 20px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
-        .product-name { font-size: 1.15rem; font-weight: bold; margin: 0 0 8px 0; color: #0f172a; }
-        .product-desc { font-size: 0.9rem; color: #64748b; margin-bottom: 15px; min-height: 40px; }
-        .product-price { font-size: 1.25rem; font-weight: bold; color: #b91c1c; margin-bottom: 15px; }
+        .product-name { font-size: 1.15rem; font-weight: bold; margin: 0 0 8px 0; color: #fff; }
+        .product-desc { font-size: 0.9rem; color: #94a3b8; margin-bottom: 15px; min-height: 40px; }
+        .product-price { font-size: 1.25rem; font-weight: bold; color: var(--primary); margin-bottom: 15px; }
     </style>
 </head>
 <body>
+
+    <!-- Background Particle Element Container -->
+    <div id="particles-js"></div>
+
     <header>
         <h1>BROOKSAUTOPLUG</h1>
         <p>Premium Genuine Auto Parts & Smart AI Car Diagnostics</p>
     </header>
+    
     <div class="container">
         <div class="grid">
             <!-- AI DIAGNOSTICS ENGINE -->
@@ -165,7 +239,7 @@ HTML_LAYOUT = """
                         <input type="text" name="location" placeholder="Current Location (e.g. Kololo, Kampala)" required>
                         <input type="text" name="problem" placeholder="What needs fixing? (e.g. Car won't start)" required>
                     </div>
-                    <button type="submit" class="btn-wa" style="background-color: #1d4ed8;">Request Mobile Repair</button>
+                    <button type="submit" class="btn-wa" style="background: linear-gradient(135deg, #1d4ed8, #3b82f6);">Request Mobile Repair</button>
                 </form>
             </div>
         </div>
@@ -196,13 +270,39 @@ HTML_LAYOUT = """
     </div>
 
     <script>
+        // Initialize the Interactive Background System
+        particlesJS("particles-js", {
+            "particles": {
+                "number": { "value": 60, "density": { "enable": true, "value_area": 800 } },
+                "color": { "value": "#00f2fe" },
+                "shape": { "type": "circle" },
+                "opacity": { "value": 0.4, "random": false },
+                "size": { "value": 3, "random": true },
+                "line_linked": { "enable": true, "distance": 150, "color": "#00f2fe", "opacity": 0.25, "width": 1 },
+                "move": { "enable": true, "speed": 1.5, "direction": "none", "random": false, "straight": false, "out_mode": "out", "bounce": false }
+            },
+            "interactivity": {
+                "detect_on": "canvas",
+                "events": {
+                    "onhover": { "enable": true, "mode": "grab" }, /* Ties nodes together when hovering mouse */
+                    "onclick": { "enable": true, "mode": "push" }, /* Spawns new nodes on click */
+                    "resize": true
+                },
+                "modes": {
+                    "grab": { "distance": 180, "line_linked": { "opacity": 0.45 } },
+                    "push": { "particles_nb": 3 }
+                }
+            },
+            "retina_detect": true
+        });
+
         async function runDiagnostic() {
             const desc = document.getElementById('issue').value;
             const resultDiv = document.getElementById('result');
             if(!desc) return alert('Please tell us what your car is doing.');
             resultDiv.style.display = "block";
             resultDiv.innerText = "BROOKSAUTOPLUG Brain analyzing your car diagnostics...";
-            resultDiv.style.borderLeftColor = "#0d6efd";
+            resultDiv.style.borderLeftColor = "#00f2fe";
             try {
                 const response = await fetch('/diagnose', {
                     method: 'POST',
@@ -568,12 +668,10 @@ def convert_price():
     currency = request.form.get('currency', 'USD')
     markup = float(request.form.get('markup', 0))
     
-    # Mathematical execution logic
     rate = EXCHANGE_RATES.get(currency, 1.0)
     base_ugx = cost * rate
     final_ugx = base_ugx * (1 + (markup / 100))
     
-    # Standard format with commas for cleaner presentation (e.g. 150,000)
     current_calculation = {
         "cost": cost,
         "currency": currency,
