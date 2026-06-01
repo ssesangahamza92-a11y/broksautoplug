@@ -1,5 +1,6 @@
 import os
 import time
+import json
 import urllib.parse
 from flask import Flask, request, jsonify, redirect, render_template_string, flash, url_for
 from google import genai
@@ -12,10 +13,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 load_dotenv()
 
 app = Flask(__name__)
-# Required key for securing admin sessions
 app.secret_key = os.getenv("SECRET_KEY", "brookautoplug_secret_key_2026")
 
-# Connected to your exact WhatsApp number
 WHATSAPP_NUMBER = "256794959101"
 
 # Initialize Gemini Client
@@ -28,7 +27,6 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 
 ADMIN_USERNAME = "admin"
-# This hashes your admin password securely
 ADMIN_PASSWORD_HASH = generate_password_hash("AdminPass2026!")
 
 class User(UserMixin):
@@ -41,30 +39,23 @@ def load_user(user_id):
         return User(ADMIN_USERNAME)
     return None
 
-# Hardcoded product catalog with image URLs for your brand display
-PRODUCT_CATALOG = [
-    {
-        "id": 1,
-        "name": "Heavy Duty Brake Pads",
-        "price": "180,000 UGX",
-        "image": "https://images.unsplash.com/photo-1486006920555-c77dce18193b?q=80&w=400&auto=format&fit=crop",
-        "description": "Premium stopping power for Toyota, Nissan, and Subaru."
-    },
-    {
-        "id": 2,
-        "name": "High-Performance Spark Plugs (Set of 4)",
-        "price": "120,000 UGX",
-        "image": "https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?q=80&w=400&auto=format&fit=crop",
-        "description": "Improves fuel efficiency and smooths out engine idling."
-    },
-    {
-        "id": 3,
-        "name": "Full Synthetic Engine Oil 5W-30 (5L)",
-        "price": "250,000 UGX",
-        "image": "https://images.unsplash.com/photo-1622595202812-70b1a0397746?q=80&w=400&auto=format&fit=crop",
-        "description": "Advanced engine wear protection for hot Ugandan climates."
-    }
-]
+# --- JSON DATABASE HELPERS ---
+DB_FILE = "database.json"
+
+def load_catalog():
+    if not os.path.exists(DB_FILE):
+        return []
+    try:
+        with open(DB_FILE, "r") as f:
+            return json.load(f)
+    except Exception:
+        return []
+
+def save_catalog(catalog):
+    with open(DB_FILE, "w") as f:
+        json.dump(catalog, f, indent=4)
+
+# --- HTML TEMPLATES ---
 
 HTML_LAYOUT = """
 <!DOCTYPE html>
@@ -92,7 +83,6 @@ HTML_LAYOUT = """
         .btn-wa:hover { background-color: #20ba5a; }
         #result { background: #f1f5f9; padding: 15px; border-radius: 6px; margin-top: 15px; border-left: 4px solid var(--primary); white-space: pre-wrap; display: none; }
         
-        /* Catalog Styling */
         .catalog-title { text-align: center; margin: 40px 0 20px 0; font-size: 2rem; color: #0f172a; }
         .catalog-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; }
         .product-card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; display: flex; flex-direction: column; }
@@ -104,12 +94,10 @@ HTML_LAYOUT = """
     </style>
 </head>
 <body>
-
     <header>
         <h1>BROOKSAUTOPLUG</h1>
         <p>Premium Genuine Auto Parts & Smart AI Car Diagnostics</p>
     </header>
-
     <div class="container">
         <div class="grid">
             <div class="card">
@@ -119,7 +107,6 @@ HTML_LAYOUT = """
                 <button class="btn-ai" onclick="runDiagnostic()">Analyze Vehicle Issue</button>
                 <div id="result"></div>
             </div>
-
             <div class="card">
                 <h2>Direct WhatsApp Order</h2>
                 <p>Know exactly what you need? Order directly through our dispatch desk.</p>
@@ -130,7 +117,6 @@ HTML_LAYOUT = """
                 </form>
             </div>
         </div>
-
         <h2 class="catalog-title">Our Stock Catalog</h2>
         <div class="catalog-grid">
             {% for product in catalog %}
@@ -154,17 +140,14 @@ HTML_LAYOUT = """
             {% endfor %}
         </div>
     </div>
-
     <script>
         async function runDiagnostic() {
             const desc = document.getElementById('issue').value;
             const resultDiv = document.getElementById('result');
             if(!desc) return alert('Please tell us what your car is doing.');
-            
             resultDiv.style.display = "block";
             resultDiv.innerText = "BROOKSAUTOPLUG Brain analyzing your car diagnostics...";
             resultDiv.style.borderLeftColor = "#0d6efd";
-            
             try {
                 const response = await fetch('/diagnose', {
                     method: 'POST',
@@ -230,16 +213,21 @@ HTML_ADMIN = """
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BROOKSAUTOPLUG | Control Panel</title>
     <style>
-        :root { --primary: #0d6efd; --dark: #1e293b; --light: #f8fafc; }
+        :root { --primary: #0d6efd; --dark: #1e293b; --light: #f8fafc; --danger: #b91c1c; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background-color: var(--light); }
         nav { background: #0f172a; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
         nav h1 { margin: 0; font-size: 1.5rem; }
-        .logout-btn { color: #f8fafc; background: #b91c1c; padding: 8px 15px; text-decoration: none; border-radius: 6px; font-weight: bold; }
-        .container { max-width: 1000px; margin: 40px auto; padding: 0 20px; }
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .logout-btn { color: #f8fafc; background: var(--danger); padding: 8px 15px; text-decoration: none; border-radius: 6px; font-weight: bold; }
+        .container { max-width: 1100px; margin: 40px auto; padding: 0 20px; display: grid; grid-template-columns: 1fr; gap: 30px; }
+        @media (min-width: 768px) { .container { grid-template-columns: 1fr 2fr; } }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); height: fit-content; }
+        .card h2 { margin-top: 0; color: #1e3a8a; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
+        input, textarea { width: 100%; padding: 10px; margin: 8px 0 15px 0; border-radius: 6px; border: 1px solid #cbd5e1; box-sizing: border-box; }
+        .btn-submit { background-color: var(--primary); color: white; border: none; padding: 12px; font-weight: bold; border-radius: 6px; cursor: pointer; width: 100%; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; }
         th { background-color: #f1f5f9; color: #1e293b; }
+        .btn-delete { background-color: var(--danger); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; text-decoration: none; font-size: 0.85rem; }
     </style>
 </head>
 <body>
@@ -249,23 +237,43 @@ HTML_ADMIN = """
     </nav>
     <div class="container">
         <div class="card">
-            <h2>Welcome Back, Boss!</h2>
-            <p>This control grid handles active item deployments completely offline from search spiders.</p>
-            <h3>Live Connected Catalog ({{ catalog|length }} Items)</h3>
+            <h2>Add New Stock Item</h2>
+            <form action="/admin/add-product" method="POST">
+                <label>Product Name</label>
+                <input type="text" name="name" placeholder="e.g. Front Shock Absorbers" required>
+                
+                <label>Price Description</label>
+                <input type="text" name="price" placeholder="e.g. 350,000 UGX" required>
+                
+                <label>Product Image Link (URL)</label>
+                <input type="url" name="image" placeholder="https://images.unsplash.com/..." required>
+                
+                <label>Short Description</label>
+                <textarea name="description" rows="3" placeholder="Specify brand compatibility..." required></textarea>
+                
+                <button type="submit" class="btn-submit">Publish to Catalog</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>Live Connected Catalog</h2>
+            <p>Managing live customer facing items completely offline from search spiders.</p>
             <table>
                 <thead>
                     <tr>
-                        <th>ID</th>
                         <th>Product Tracked</th>
                         <th>Market Price</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for product in catalog %}
                     <tr>
-                        <td>{{ product.id }}</td>
                         <td><strong>{{ product.name }}</strong></td>
-                        <td>{{ product.price }}</td>
+                        <td><span style="color: var(--danger); font-weight: bold;">{{ product.price }}</span></td>
+                        <td>
+                            <a href="/admin/delete-product/{{ product.id }}" class="btn-delete" onclick="return confirm('Remove this part from public display?')">Delete</a>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -276,9 +284,11 @@ HTML_ADMIN = """
 </html>
 """
 
+# --- PUBLIC CONTROLLERS ---
+
 @app.route('/')
 def home():
-    return render_template_string(HTML_LAYOUT, catalog=PRODUCT_CATALOG)
+    return render_template_string(HTML_LAYOUT, catalog=load_catalog())
 
 @app.route('/diagnose', methods=['POST'])
 def diagnose_car():
@@ -297,22 +307,19 @@ def diagnose_car():
     """
     
     max_retries = 3
-    delay = 2  # Seconds to pause before the first retry attempt
+    delay = 2
     
     for attempt in range(max_retries):
         try:
             response = client.models.generate_content(model='gemini-2.5-flash', contents=prompt)
             return jsonify({"diagnostic": response.text})
-            
         except APIError as e:
-            # Catch 503 Service Unavailable / Overloaded traffic spikes
             if e.code == 503 and attempt < max_retries - 1:
-                print(f"Google 503 High Demand Traffic Spike. Retrying in {delay} seconds...")
+                print(f"Google 503 Traffic Spike. Retrying in {delay} seconds...")
                 time.sleep(delay)
-                delay *= 2  # Double the wait window (Exponential backoff)
+                delay *= 2
                 continue
-            return jsonify({"error": f"Our diagnostic assistant is experiencing heavy traffic at the moment. Please try again shortly. Details: {e.message}"}), 503
-            
+            return jsonify({"error": f"Our diagnostic assistant is experiencing heavy traffic. Please try again shortly. Details: {e.message}"}), 503
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
@@ -321,8 +328,6 @@ def place_order():
     part_name = request.form.get('part_name')
     car_model = request.form.get('car_model')
     message = f"Hello BROOKSAUTOPLUG, I would like to order: {part_name} for vehicle: {car_model}."
-    
-    # Safe encoding using native urllib
     encoded_message = urllib.parse.quote(message)
     return redirect(f"https://api.whatsapp.com/send?phone={WHATSAPP_NUMBER}&text={encoded_message}")
 
@@ -356,7 +361,35 @@ def logout():
 @app.route('/admin-panel-secure-xyz')
 @login_required
 def admin_panel():
-    return render_template_string(HTML_ADMIN, catalog=PRODUCT_CATALOG)
+    return render_template_string(HTML_ADMIN, catalog=load_catalog())
+
+@app.route('/admin/add-product', methods=['POST'])
+@login_required
+def add_product():
+    catalog = load_catalog()
+    
+    # Generate a unique simple ID based on timestamp
+    new_id = int(time.time())
+    
+    new_item = {
+        "id": new_id,
+        "name": request.form.get('name'),
+        "price": request.form.get('price'),
+        "image": request.form.get('image'),
+        "description": request.form.get('description')
+    }
+    
+    catalog.append(new_item)
+    save_catalog(catalog)
+    return redirect(url_for('admin_panel'))
+
+@app.route('/admin/delete-product/<int:product_id>')
+@login_required
+def delete_product(product_id):
+    catalog = load_catalog()
+    updated_catalog = [item for item in catalog if item['id'] != product_id]
+    save_catalog(updated_catalog)
+    return redirect(url_for('admin_panel'))
 
 if __name__ == '__main__':
     app.run(debug=True)

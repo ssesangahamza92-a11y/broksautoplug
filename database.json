@@ -1,0 +1,23 @@
+[
+  {
+    "id": 1,
+    "name": "Heavy Duty Brake Pads",
+    "price": "180,000 UGX",
+    "image": "https://images.unsplash.com/photo-1486006920555-c77dce18193b?q=80&w=400&auto=format&fit=crop",
+    "description": "Premium stopping power for Toyota, Nissan, and Subaru."
+  },
+  {
+    "id": 2,
+    "name": "High-Performance Spark Plugs (Set of 4)",
+    "price": "120,000 UGX",
+    "image": "https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?q=80&w=400&auto=format&fit=crop",
+    "description": "Improves fuel efficiency and smooths out engine idling."
+  },
+  {
+    "id": 3,
+    "name": "Full Synthetic Engine Oil 5W-30 (5L)",
+    "price": "250,000 UGX",
+    "image": "https://images.unsplash.com/photo-1622595202812-70b1a0397746?q=80&w=400&auto=format&fit=crop",
+    "description": "Advanced engine wear protection for hot Ugandan climates."
+  }
+]
