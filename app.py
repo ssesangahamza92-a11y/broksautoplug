@@ -1,11 +1,15 @@
 import os
-from flask import Flask, request, jsonify, redirect, render_template_string
+from flask import Flask, request, jsonify, redirect, render_template_string, flash, url_for
 from google import genai
 from dotenv import load_dotenv
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from werkzeug.security import generate_password_hash, check_password_hash
 
 load_dotenv()
 
 app = Flask(__name__)
+# Required key for securing admin sessions
+app.secret_key = os.getenv("SECRET_KEY", "brookautoplug_secret_key_2026")
 
 # Connected to your exact WhatsApp number
 WHATSAPP_NUMBER = "256794959101"
@@ -13,6 +17,25 @@ WHATSAPP_NUMBER = "256794959101"
 # Initialize Gemini Client
 api_key = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=api_key) if api_key else None
+
+# --- FLASK-LOGIN & SECURITY CONFIGURATION ---
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+
+ADMIN_USERNAME = "admin"
+# This hashes your admin password securely
+ADMIN_PASSWORD_HASH = generate_password_hash("AdminPass2026!")
+
+class User(UserMixin):
+    def __init__(self, id):
+        self.id = id
+
+@login_manager.user_loader
+def load_user(user_id):
+    if user_id == ADMIN_USERNAME:
+        return User(ADMIN_USERNAME)
+    return None
 
 # Hardcoded product catalog with image URLs for your brand display
 PRODUCT_CATALOG = [
@@ -161,9 +184,96 @@ HTML_LAYOUT = """
 </html>
 """
 
+HTML_LOGIN = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BROOKSAUTOPLUG | Admin Gateway</title>
+    <style>
+        :root { --primary: #0d6efd; --dark: #1e293b; --light: #f8fafc; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background-color: var(--light); color: var(--dark); display: flex; flex-direction: column; min-height: 100vh; }
+        header { background: linear-gradient(135deg, #0f172a, #1e3a8a); color: white; padding: 25px; text-align: center; border-bottom: 5px solid var(--primary); }
+        .login-container { max-width: 400px; margin: auto; width: 90%; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        input { width: 100%; padding: 12px; margin: 10px 0 20px 0; border-radius: 6px; border: 1px solid #cbd5e1; box-sizing: border-box; }
+        button { width: 100%; padding: 14px; border: none; border-radius: 6px; font-weight: bold; background-color: var(--primary); color: white; cursor: pointer; }
+        .msg { color: #b91c1c; text-align: center; margin-bottom: 15px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <header><h1>BROOKSAUTOPLUG Portal</h1></header>
+    <div class="login-container">
+        <h2>Private Access Login</h2>
+        {% if error %}<div class="msg">{{ error }}</div>{% endif %}
+        <form method="POST">
+            <label>Admin Username</label>
+            <input type="text" name="username" required>
+            <label>Secure Password</label>
+            <input type="password" name="password" required>
+            <button type="submit">Verify Identity</button>
+        </form>
+    </div>
+</body>
+</html>
+"""
+
+HTML_ADMIN = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BROOKSAUTOPLUG | Control Panel</title>
+    <style>
+        :root { --primary: #0d6efd; --dark: #1e293b; --light: #f8fafc; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background-color: var(--light); }
+        nav { background: #0f172a; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+        nav h1 { margin: 0; font-size: 1.5rem; }
+        .logout-btn { color: #f8fafc; background: #b91c1c; padding: 8px 15px; text-decoration: none; border-radius: 6px; font-weight: bold; }
+        .container { max-width: 1000px; margin: 40px auto; padding: 0 20px; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+        th { background-color: #f1f5f9; color: #1e293b; }
+    </style>
+</head>
+<body>
+    <nav>
+        <h1>BROOKSAUTOPLUG Command Center</h1>
+        <a href="/logout" class="logout-btn">Secure Log Out</a>
+    </nav>
+    <div class="container">
+        <div class="card">
+            <h2>Welcome Back, Boss!</h2>
+            <p>This control grid handles active item deployments completely offline from search spiders.</p>
+            <h3>Live Connected Catalog ({{ catalog|length }} Items)</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Product Tracked</th>
+                        <th>Market Price</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in catalog %}
+                    <tr>
+                        <td>{{ product.id }}</td>
+                        <td><strong>{{ product.name }}</strong></td>
+                        <td>{{ product.price }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>
+"""
+
 @app.route('/')
 def home():
-    # Pass the image product catalog into the layout dynamically
     return render_template_string(HTML_LAYOUT, catalog=PRODUCT_CATALOG)
 
 @app.route('/diagnose', methods=['POST'])
@@ -192,11 +302,43 @@ def place_order():
     part_name = request.form.get('part_name')
     car_model = request.form.get('car_model')
     message = f"Hello BROOKSAUTOPLUG, I would like to order: {part_name} for vehicle: {car_model}."
-    return redirect(f"https://api.whatsapp.com/send?phone={WHATSAPP_NUMBER}&text={request.utils.quote(message)}")
+    
+    # Safe import inside route execution block
+    import urllib.parse
+    encoded_message = urllib.parse.quote(message)
+    return redirect(f"https://api.whatsapp.com/send?phone={WHATSAPP_NUMBER}&text={encoded_message}")
+
+# --- SECURED PRIVATE ADMIN CONTROLLERS ---
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('admin_panel'))
+    
+    error = None
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        if username == ADMIN_USERNAME and check_password_hash(ADMIN_PASSWORD_HASH, password):
+            user = User(ADMIN_USERNAME)
+            login_user(user)
+            return redirect(url_for('admin_panel'))
+        else:
+            error = "Invalid credential authorization signature."
+            
+    return render_template_string(HTML_LOGIN, error=error)
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('login'))
 
 @app.route('/admin-panel-secure-xyz')
+@login_required
 def admin_panel():
-    return "<h1>BROOKSAUTOPLUG Secure Control Panel</h1>"
+    return render_template_string(HTML_ADMIN, catalog=PRODUCT_CATALOG)
 
 if __name__ == '__main__':
     app.run(debug=True)
