@@ -1,7 +1,10 @@
 import os
+import time
 import urllib.parse
 from flask import Flask, request, jsonify, redirect, render_template_string, flash, url_for
 from google import genai
+from google.genai import types
+from google.genai.errors import APIError
 from dotenv import load_dotenv
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -173,7 +176,7 @@ HTML_LAYOUT = """
                     resultDiv.innerText = data.diagnostic;
                     resultDiv.style.borderLeftColor = "#25D366";
                 } else {
-                    resultDiv.innerText = "⚠️ Setup Status: " + (data.error || "Could not fetch diagnosis.");
+                    resultDiv.innerText = "⚠️ " + (data.error || "Could not fetch diagnosis.");
                     resultDiv.style.borderLeftColor = "#b91c1c";
                 }
             } catch (err) {
@@ -281,6 +284,7 @@ def home():
 def diagnose_car():
     if not client:
         return jsonify({"error": "Gemini API key is missing on Render. Please configure your environment variables."}), 500
+        
     data = request.json
     user_description = data.get('description', '')
     
@@ -292,11 +296,25 @@ def diagnose_car():
     the replacement elements in Ugandan Shillings (UGX). Keep it bold and easy to scan.
     """
     
-    try:
-        response = client.models.generate_content(model='gemini-2.5-flash', contents=prompt)
-        return jsonify({"diagnostic": response.text})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    max_retries = 3
+    delay = 2  # Seconds to pause before the first retry attempt
+    
+    for attempt in range(max_retries):
+        try:
+            response = client.models.generate_content(model='gemini-2.5-flash', contents=prompt)
+            return jsonify({"diagnostic": response.text})
+            
+        except APIError as e:
+            # Catch 503 Service Unavailable / Overloaded traffic spikes
+            if e.code == 503 and attempt < max_retries - 1:
+                print(f"Google 503 High Demand Traffic Spike. Retrying in {delay} seconds...")
+                time.sleep(delay)
+                delay *= 2  # Double the wait window (Exponential backoff)
+                continue
+            return jsonify({"error": f"Our diagnostic assistant is experiencing heavy traffic at the moment. Please try again shortly. Details: {e.message}"}), 503
+            
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
 
 @app.route('/order', methods=['POST'])
 def place_order():
