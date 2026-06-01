@@ -1,4 +1,5 @@
 import os
+import urllib.parse
 from flask import Flask, request, jsonify, redirect, render_template_string, flash, url_for
 from google import genai
 from dotenv import load_dotenv
@@ -303,8 +304,7 @@ def place_order():
     car_model = request.form.get('car_model')
     message = f"Hello BROOKSAUTOPLUG, I would like to order: {part_name} for vehicle: {car_model}."
     
-    # Safe import inside route execution block
-    import urllib.parse
+    # Safe encoding using native urllib
     encoded_message = urllib.parse.quote(message)
     return redirect(f"https://api.whatsapp.com/send?phone={WHATSAPP_NUMBER}&text={encoded_message}")
 
