@@ -17,6 +17,14 @@ app.secret_key = os.getenv("SECRET_KEY", "brookautoplug_secret_key_2026")
 
 WHATSAPP_NUMBER = "256794959101"
 
+# Standard baseline exchange rates for quick calculations (Can be manually tweaked)
+EXCHANGE_RATES = {
+    "USD": 3750.0,  # 1 USD to UGX
+    "KES": 28.5,    # 1 KES to UGX
+    "AED": 1020.0,  # 1 AED to UGX
+    "EUR": 4050.0   # 1 EUR to UGX
+}
+
 # Initialize Gemini Client
 api_key = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=api_key) if api_key else None
@@ -86,7 +94,6 @@ HTML_LAYOUT = """
         header p { margin: 5px 0 0 0; opacity: 0.9; font-size: 1.1rem; }
         .container { max-width: 1100px; margin: 30px auto; padding: 0 20px; }
         
-        /* 3-Column Grid for Public Services */
         .grid { display: grid; grid-template-columns: 1fr; gap: 25px; margin-bottom: 40px; }
         @media (min-width: 992px) { .grid { grid-template-columns: 4fr 3fr 3fr; } }
         
@@ -121,7 +128,7 @@ HTML_LAYOUT = """
     </header>
     <div class="container">
         <div class="grid">
-            <!-- 1. AI DIAGNOSTICS ENGINE -->
+            <!-- AI DIAGNOSTICS ENGINE -->
             <div class="card">
                 <div>
                     <h2>AI Vehicle Diagnostic Engine</h2>
@@ -134,7 +141,7 @@ HTML_LAYOUT = """
                 </div>
             </div>
 
-            <!-- 2. DIRECT SPARE PARTS ORDER FORM -->
+            <!-- DIRECT SPARE PARTS ORDER FORM -->
             <div class="card">
                 <form action="/order-parts" method="POST" style="height: 100%; display: flex; flex-direction: column; justify-content: space-between;">
                     <div>
@@ -147,7 +154,7 @@ HTML_LAYOUT = """
                 </form>
             </div>
 
-            <!-- 3. CLIENT MOBILE REPAIR REQUEST FORM -->
+            <!-- CLIENT MOBILE REPAIR REQUEST FORM -->
             <div class="card">
                 <form action="/request-mobile-repair" method="POST" style="height: 100%; display: flex; flex-direction: column; justify-content: space-between;">
                     <div>
@@ -266,7 +273,7 @@ HTML_ADMIN = """
         nav { background: #0f172a; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
         nav h1 { margin: 0; font-size: 1.5rem; }
         .logout-btn { color: #f8fafc; background: var(--danger); padding: 8px 15px; text-decoration: none; border-radius: 6px; font-weight: bold; }
-        .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; display: grid; grid-template-columns: 1fr; gap: 30px; }
+        .container { max-width: 1300px; margin: 30px auto; padding: 0 20px; display: grid; grid-template-columns: 1fr; gap: 30px; }
         @media (min-width: 992px) { .container { grid-template-columns: 1fr 2fr; } }
         .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); height: fit-content; margin-bottom: 20px; }
         .card h2 { margin-top: 0; color: #1e3a8a; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
@@ -282,6 +289,7 @@ HTML_ADMIN = """
         .status-done { background-color: #dcfce7; color: #15803d; }
         .inline-form { display: inline; }
         .status-select { width: auto; padding: 4px; margin: 0; font-size: 0.8rem; }
+        .calc-box { background: #f0fdf4; border: 2px dashed #22c55e; padding: 15px; border-radius: 6px; margin-top: 15px; font-weight: bold; color: #166534; }
     </style>
 </head>
 <body>
@@ -291,7 +299,7 @@ HTML_ADMIN = """
     </nav>
     <div class="container">
         
-        <!-- SIDE PANEL FOR ADDS -->
+        <!-- SIDE PANEL FOR ADDS & CALCULATORS -->
         <div>
             <!-- ADD PRODUCT FORM -->
             <div class="card">
@@ -300,7 +308,7 @@ HTML_ADMIN = """
                     <label>Product Name</label>
                     <input type="text" name="name" required>
                     <label>Price Description</label>
-                    <input type="text" name="price" placeholder="e.g. 180,000 UGX" required>
+                    <input type="text" name="price" placeholder="e.g. 180,000 UGX" id="form_calculated_price" required>
                     <label>Image Link (URL)</label>
                     <input type="url" name="image" required>
                     <label>Short Description</label>
@@ -309,10 +317,40 @@ HTML_ADMIN = """
                 </form>
             </div>
 
+            <!-- WHOLESALE PRICE CONVERTER TOOL -->
+            <div class="card" style="background-color: #f8fafc; border: 1px solid #e2e8f0;">
+                <h2>Price Converter (Markup Tool)</h2>
+                <p>Convert international distributor quotes to final consumer UGX retail pricing.</p>
+                <form action="/admin/convert-price" method="POST">
+                    <label>Wholesale Cost</label>
+                    <input type="number" step="0.01" name="cost" value="{{ last_calc.cost if last_calc else '' }}" placeholder="e.g. 50" required>
+                    
+                    <label>Source Currency</label>
+                    <select name="currency" required>
+                        <option value="USD" {% if last_calc and last_calc.currency == 'USD' %}selected{% endif %}>USD ($)</option>
+                        <option value="AED" {% if last_calc and last_calc.currency == 'AED' %}selected{% endif %}>AED (Dirham)</option>
+                        <option value="KES" {% if last_calc and last_calc.currency == 'KES' %}selected{% endif %}>KES (Shilling)</option>
+                        <option value="EUR" {% if last_calc and last_calc.currency == 'EUR' %}selected{% endif %}>EUR (€)</option>
+                    </select>
+                    
+                    <label>Profit Margin Markup (%)</label>
+                    <input type="number" name="markup" value="{{ last_calc.markup if last_calc else '25' }}" placeholder="e.g. 25" required>
+                    
+                    <button type="submit" class="btn-submit" style="background-color: #475569;">Calculate UGX Rate</button>
+                </form>
+                
+                {% if last_calc %}
+                <div class="calc-box">
+                    Suggested UGX Price:<br>
+                    <span style="font-size: 1.4rem; color: #15803d;">{{ last_calc.result }} UGX</span>
+                    <br><span style="font-size: 0.8rem; font-weight: normal; color: #65a30d;">Base Conversion: {{ last_calc.base }} UGX</span>
+                </div>
+                {% endif %}
+            </div>
+
             <!-- LOG CONFIRMED REPAIR JOB MANUALLY -->
             <div class="card">
                 <h2>Log Internal Booking</h2>
-                <p>Use this to manually log jobs after confirming details over WhatsApp.</p>
                 <form action="/admin/add-job" method="POST">
                     <label>Customer Details</label>
                     <input type="text" name="customer" placeholder="Name or Phone" required>
@@ -332,7 +370,6 @@ HTML_ADMIN = """
             <!-- MOBILE SERVICES TRACKING ARCHIVE -->
             <div class="card">
                 <h2>Mobile Services Monitoring Log</h2>
-                <p>Monitor your active team operations, on-site mechanics, and job statuses around Kampala.</p>
                 <table>
                     <thead>
                         <tr>
@@ -402,6 +439,9 @@ HTML_ADMIN = """
 </html>
 """
 
+# Active session store for quick calculations without a database hit
+current_calculation = None
+
 # --- PUBLIC ROUTING SYSTEM & WHATSAPP REDIRECTS ---
 
 @app.route('/')
@@ -454,7 +494,6 @@ def request_mobile_repair():
     location = request.form.get('location')
     problem = request.form.get('problem')
     
-    # Pre-formatting the direct WhatsApp text format
     message = (
         f"🚨 *BROOKSAUTOPLUG MOBILE REPAIR REQUEST*\n\n"
         f"👤 *Client Name:* {client_name}\n"
@@ -492,7 +531,11 @@ def logout():
 @app.route('/admin-panel-secure-xyz')
 @login_required
 def admin_panel():
-    return render_template_string(HTML_ADMIN, catalog=load_catalog(), jobs=load_jobs())
+    global current_calculation
+    calc = current_calculation
+    # Flush tool window cache upon rendering view to avoid stale values later
+    current_calculation = None
+    return render_template_string(HTML_ADMIN, catalog=load_catalog(), jobs=load_jobs(), last_calc=calc)
 
 @app.route('/admin/add-product', methods=['POST'])
 @login_required
@@ -515,6 +558,29 @@ def delete_product(product_id):
     catalog = load_catalog()
     updated_catalog = [item for item in catalog if item['id'] != product_id]
     save_catalog(updated_catalog)
+    return redirect(url_for('admin_panel'))
+
+@app.route('/admin/convert-price', methods=['POST'])
+@login_required
+def convert_price():
+    global current_calculation
+    cost = float(request.form.get('cost', 0))
+    currency = request.form.get('currency', 'USD')
+    markup = float(request.form.get('markup', 0))
+    
+    # Mathematical execution logic
+    rate = EXCHANGE_RATES.get(currency, 1.0)
+    base_ugx = cost * rate
+    final_ugx = base_ugx * (1 + (markup / 100))
+    
+    # Standard format with commas for cleaner presentation (e.g. 150,000)
+    current_calculation = {
+        "cost": cost,
+        "currency": currency,
+        "markup": markup,
+        "base": f"{int(base_ugx):,}",
+        "result": f"{int(final_ugx):,}"
+    }
     return redirect(url_for('admin_panel'))
 
 @app.route('/admin/add-job', methods=['POST'])
