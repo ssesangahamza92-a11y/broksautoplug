@@ -79,32 +79,39 @@ HTML_LAYOUT = """
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BROOKSAUTOPLUG | Premium Auto Parts & AI Diagnostics</title>
     <style>
-        :root { --primary: #0d6efd; --success: #25D366; --dark: #1e293b; --light: #f8fafc; }
+        :root { --primary: #0d6efd; --success: #25D366; --dark: #0f172a; --light: #f8fafc; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: var(--light); color: var(--dark); }
         header { background: linear-gradient(135deg, #0f172a, #1e3a8a); color: white; padding: 40px 20px; text-align: center; border-bottom: 5px solid var(--primary); }
         header h1 { margin: 0; font-size: 2.5rem; letter-spacing: 2px; text-transform: uppercase; }
         header p { margin: 5px 0 0 0; opacity: 0.9; font-size: 1.1rem; }
         .container { max-width: 1100px; margin: 30px auto; padding: 0 20px; }
-        .grid { display: grid; grid-template-columns: 1fr; gap: 30px; }
-        @media (min-width: 768px) { .grid { grid-template-columns: 2fr 1fr; } }
-        .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); padding: 25px; margin-bottom: 25px; }
-        .card h2 { margin-top: 0; color: #1e3a8a; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
-        textarea, input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 6px; border: 1px solid #cbd5e1; box-sizing: border-box; font-size: 1rem; }
-        button { width: 100%; padding: 14px; border: none; border-radius: 6px; font-weight: bold; font-size: 1rem; cursor: pointer; transition: all 0.2s; }
+        
+        /* 3-Column Grid for Public Services */
+        .grid { display: grid; grid-template-columns: 1fr; gap: 25px; margin-bottom: 40px; }
+        @media (min-width: 992px) { .grid { grid-template-columns: 4fr 3fr 3fr; } }
+        
+        .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); padding: 22px; display: flex; flex-direction: column; justify-content: space-between; }
+        .card h2 { margin-top: 0; color: #1e3a8a; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; font-size: 1.4rem; }
+        .card p { font-size: 0.95rem; color: #475569; line-height: 1.5; margin-bottom: 15px; }
+        
+        textarea, input { width: 100%; padding: 10px; margin: 8px 0; border-radius: 6px; border: 1px solid #cbd5e1; box-sizing: border-box; font-size: 0.95rem; }
+        button, .btn-wa { width: 100%; padding: 12px; border: none; border-radius: 6px; font-weight: bold; font-size: 1rem; cursor: pointer; transition: all 0.2s; text-align: center; box-sizing: border-box; }
+        
         .btn-ai { background-color: var(--primary); color: white; }
         .btn-ai:hover { background-color: #0b5ed7; }
         .btn-wa { background-color: var(--success); color: white; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
         .btn-wa:hover { background-color: #20ba5a; }
-        #result { background: #f1f5f9; padding: 15px; border-radius: 6px; margin-top: 15px; border-left: 4px solid var(--primary); white-space: pre-wrap; display: none; }
+        
+        #result { background: #f1f5f9; padding: 15px; border-radius: 6px; margin-top: 15px; border-left: 4px solid var(--primary); white-space: pre-wrap; display: none; font-size: 0.95rem; }
         
         .catalog-title { text-align: center; margin: 40px 0 20px 0; font-size: 2rem; color: #0f172a; }
         .catalog-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; }
         .product-card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; display: flex; flex-direction: column; }
         .product-image { width: 100%; height: 200px; object-fit: cover; background-color: #cbd5e1; }
         .product-info { padding: 20px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
-        .product-name { font-size: 1.2rem; font-weight: bold; margin: 0 0 10px 0; color: #0f172a; }
-        .product-desc { font-size: 0.9rem; color: #64748b; margin-bottom: 15px; }
-        .product-price { font-size: 1.3rem; font-weight: bold; color: #b91c1c; margin-bottom: 15px; }
+        .product-name { font-size: 1.15rem; font-weight: bold; margin: 0 0 8px 0; color: #0f172a; }
+        .product-desc { font-size: 0.9rem; color: #64748b; margin-bottom: 15px; min-height: 40px; }
+        .product-price { font-size: 1.25rem; font-weight: bold; color: #b91c1c; margin-bottom: 15px; }
     </style>
 </head>
 <body>
@@ -114,23 +121,49 @@ HTML_LAYOUT = """
     </header>
     <div class="container">
         <div class="grid">
+            <!-- 1. AI DIAGNOSTICS ENGINE -->
             <div class="card">
-                <h2>AI Vehicle Diagnostic Engine</h2>
-                <p>Describe the strange sound, mechanical issue, or dashboard lights your vehicle is experiencing. Our adaptive AI mechanic will identify potential causes and suggest solutions.</p>
-                <textarea id="issue" rows="4" placeholder="Example: My Toyota Premio makes a grinding noise from the front wheels whenever I apply brakes..."></textarea>
-                <button class="btn-ai" onclick="runDiagnostic()">Analyze Vehicle Issue</button>
-                <div id="result"></div>
+                <div>
+                    <h2>AI Vehicle Diagnostic Engine</h2>
+                    <p>Describe the strange sound, mechanical issue, or dashboard warning lights. Our AI mechanic will analyze the problem instantly.</p>
+                    <textarea id="issue" rows="4" placeholder="Example: My Toyota Premio makes a grinding noise from the front wheels whenever I apply brakes..."></textarea>
+                </div>
+                <div>
+                    <button class="btn-ai" onclick="runDiagnostic()">Analyze Vehicle Issue</button>
+                    <div id="result"></div>
+                </div>
             </div>
+
+            <!-- 2. DIRECT SPARE PARTS ORDER FORM -->
             <div class="card">
-                <h2>Direct WhatsApp Order</h2>
-                <p>Know exactly what you need? Order directly through our dispatch desk.</p>
-                <form action="/order" method="POST">
-                    <input type="text" name="part_name" placeholder="Part Needed (e.g. Shock Absorbers)" required>
-                    <input type="text" name="car_model" placeholder="Car Model / Year (e.g. Harrier 2015)" required>
-                    <button type="submit" class="btn-wa">Order via WhatsApp</button>
+                <form action="/order-parts" method="POST" style="height: 100%; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <h2>Order Spare Parts</h2>
+                        <p>Know the specific part your vehicle requires? Submit details directly to our automated dispatch desk via WhatsApp.</p>
+                        <input type="text" name="part_name" placeholder="Part Needed (e.g. Front Shock Absorbers)" required>
+                        <input type="text" name="car_model" placeholder="Car Model & Year (e.g. Harrier 2015)" required>
+                    </div>
+                    <button type="submit" class="btn-wa">Order Parts via WhatsApp</button>
+                </form>
+            </div>
+
+            <!-- 3. CLIENT MOBILE REPAIR REQUEST FORM -->
+            <div class="card">
+                <form action="/request-mobile-repair" method="POST" style="height: 100%; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <h2>On-Site Mobile Repair</h2>
+                        <p>Stranded or need a mechanic sent directly to you? Request mobile tracking service anywhere around town.</p>
+                        <input type="text" name="client_name" placeholder="Your Name / Contact Info" required>
+                        <input type="text" name="car_model" placeholder="Car Model (e.g. Toyota Wish)" required>
+                        <input type="text" name="location" placeholder="Current Location (e.g. Kololo, Kampala)" required>
+                        <input type="text" name="problem" placeholder="What needs fixing? (e.g. Car won't start)" required>
+                    </div>
+                    <button type="submit" class="btn-wa" style="background-color: #1d4ed8;">Request Mobile Repair</button>
                 </form>
             </div>
         </div>
+
+        <!-- PRODUCT CATALOG SECTION -->
         <h2 class="catalog-title">Our Stock Catalog</h2>
         <div class="catalog-grid">
             {% for product in catalog %}
@@ -143,7 +176,7 @@ HTML_LAYOUT = """
                     </div>
                     <div>
                         <div class="product-price">{{ product.price }}</div>
-                        <form action="/order" method="POST">
+                        <form action="/order-parts" method="POST">
                             <input type="hidden" name="part_name" value="{{ product.name }}">
                             <input type="hidden" name="car_model" value="Stock Catalog Item">
                             <button type="submit" class="btn-wa">Buy via WhatsApp</button>
@@ -154,6 +187,7 @@ HTML_LAYOUT = """
             {% endfor %}
         </div>
     </div>
+
     <script>
         async function runDiagnostic() {
             const desc = document.getElementById('issue').value;
@@ -257,7 +291,7 @@ HTML_ADMIN = """
     </nav>
     <div class="container">
         
-        <!-- SIDE PANEL FOR FORMS -->
+        <!-- SIDE PANEL FOR ADDS -->
         <div>
             <!-- ADD PRODUCT FORM -->
             <div class="card">
@@ -275,36 +309,37 @@ HTML_ADMIN = """
                 </form>
             </div>
 
-            <!-- LOG MOBILE REPAIR JOB FORM -->
+            <!-- LOG CONFIRMED REPAIR JOB MANUALLY -->
             <div class="card">
-                <h2>Log Mobile Repair Job</h2>
+                <h2>Log Internal Booking</h2>
+                <p>Use this to manually log jobs after confirming details over WhatsApp.</p>
                 <form action="/admin/add-job" method="POST">
-                    <label>Customer Name / Contact</label>
-                    <input type="text" name="customer" placeholder="e.g. John +256..." required>
+                    <label>Customer Details</label>
+                    <input type="text" name="customer" placeholder="Name or Phone" required>
                     <label>Car Model</label>
-                    <input type="text" name="car_model" placeholder="e.g. Toyota Wish 2012" required>
-                    <label>Location Around Town</label>
-                    <input type="text" name="location" placeholder="e.g. Kololo, Kampala" required>
-                    <label>Issue Description</label>
-                    <textarea name="issue" rows="2" placeholder="e.g. Alternator replacement" required></textarea>
-                    <button type="submit" class="btn-submit" style="background-color: var(--success);">Dispatch / Log Job</button>
+                    <input type="text" name="car_model" required>
+                    <label>Location</label>
+                    <input type="text" name="location" required>
+                    <label>Issue</label>
+                    <textarea name="issue" rows="2" required></textarea>
+                    <button type="submit" class="btn-submit" style="background-color: var(--success);">Save to Monitoring Log</button>
                 </form>
             </div>
         </div>
 
-        <!-- MAIN MANAGEMENT BOARDS -->
+        <!-- MAIN MONITORING BOARDS -->
         <div>
-            <!-- MOBILE SERVICES DISPATCH LOG -->
+            <!-- MOBILE SERVICES TRACKING ARCHIVE -->
             <div class="card">
-                <h2>Mobile Services Dispatch Log</h2>
-                <p>Tracks on-site mechanic assignments and location repairs around town.</p>
+                <h2>Mobile Services Monitoring Log</h2>
+                <p>Monitor your active team operations, on-site mechanics, and job statuses around Kampala.</p>
                 <table>
                     <thead>
                         <tr>
                             <th>Car & Customer</th>
                             <th>Location</th>
                             <th>Issue</th>
-                            <th>Status</th>
+                            <th>Status Control</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -367,7 +402,7 @@ HTML_ADMIN = """
 </html>
 """
 
-# --- PUBLIC CONTROLLERS ---
+# --- PUBLIC ROUTING SYSTEM & WHATSAPP REDIRECTS ---
 
 @app.route('/')
 def home():
@@ -376,7 +411,7 @@ def home():
 @app.route('/diagnose', methods=['POST'])
 def diagnose_car():
     if not client:
-        return jsonify({"error": "Gemini API key is missing on Render. Please configure your environment variables."}), 500
+        return jsonify({"error": "Gemini API key is missing. Please configure environment variables."}), 500
         
     data = request.json
     user_description = data.get('description', '')
@@ -391,26 +426,42 @@ def diagnose_car():
     
     max_retries = 3
     delay = 2
-    
     for attempt in range(max_retries):
         try:
             response = client.models.generate_content(model='gemini-2.5-flash', contents=prompt)
             return jsonify({"diagnostic": response.text})
         except APIError as e:
             if e.code == 503 and attempt < max_retries - 1:
-                print(f"Google 503 Traffic Spike. Retrying in {delay} seconds...")
                 time.sleep(delay)
                 delay *= 2
                 continue
-            return jsonify({"error": f"Our diagnostic assistant is experiencing heavy traffic. Please try again shortly. Details: {e.message}"}), 503
+            return jsonify({"error": f"Heavy traffic. Details: {e.message}"}), 503
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
-@app.route('/order', methods=['POST'])
-def place_order():
+@app.route('/order-parts', methods=['POST'])
+def order_parts():
     part_name = request.form.get('part_name')
     car_model = request.form.get('car_model')
     message = f"Hello BROOKSAUTOPLUG, I would like to order: {part_name} for vehicle: {car_model}."
+    encoded_message = urllib.parse.quote(message)
+    return redirect(f"https://api.whatsapp.com/send?phone={WHATSAPP_NUMBER}&text={encoded_message}")
+
+@app.route('/request-mobile-repair', methods=['POST'])
+def request_mobile_repair():
+    client_name = request.form.get('client_name')
+    car_model = request.form.get('car_model')
+    location = request.form.get('location')
+    problem = request.form.get('problem')
+    
+    # Pre-formatting the direct WhatsApp text format
+    message = (
+        f"🚨 *BROOKSAUTOPLUG MOBILE REPAIR REQUEST*\n\n"
+        f"👤 *Client Name:* {client_name}\n"
+        f"🚗 *Vehicle Model:* {car_model}\n"
+        f"📍 *Location:* {location}\n"
+        f"🔧 *Issue Reported:* {problem}"
+    )
     encoded_message = urllib.parse.quote(message)
     return redirect(f"https://api.whatsapp.com/send?phone={WHATSAPP_NUMBER}&text={encoded_message}")
 
@@ -420,19 +471,16 @@ def place_order():
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('admin_panel'))
-    
     error = None
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
-        
         if username == ADMIN_USERNAME and check_password_hash(ADMIN_PASSWORD_HASH, password):
             user = User(ADMIN_USERNAME)
             login_user(user)
             return redirect(url_for('admin_panel'))
         else:
             error = "Invalid credential authorization signature."
-            
     return render_template_string(HTML_LOGIN, error=error)
 
 @app.route('/logout')
@@ -450,9 +498,8 @@ def admin_panel():
 @login_required
 def add_product():
     catalog = load_catalog()
-    new_id = int(time.time())
     new_item = {
-        "id": new_id,
+        "id": int(time.time()),
         "name": request.form.get('name'),
         "price": request.form.get('price'),
         "image": request.form.get('image'),
@@ -470,20 +517,17 @@ def delete_product(product_id):
     save_catalog(updated_catalog)
     return redirect(url_for('admin_panel'))
 
-# --- MOBILE DISPATCH CONTROLLERS ---
-
 @app.route('/admin/add-job', methods=['POST'])
 @login_required
 def add_job():
     jobs = load_jobs()
-    new_id = int(time.time())
     new_job = {
-        "id": new_id,
+        "id": int(time.time()),
         "customer": request.form.get('customer'),
         "car_model": request.form.get('car_model'),
         "location": request.form.get('location'),
         "issue": request.form.get('issue'),
-        "status": "pending"  # Jobs default to pending when first opened
+        "status": "pending"
     }
     jobs.append(new_job)
     save_jobs(jobs)
