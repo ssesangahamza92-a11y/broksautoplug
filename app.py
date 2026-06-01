@@ -41,6 +41,7 @@ def load_user(user_id):
 
 # --- JSON DATABASE HELPERS ---
 DB_FILE = "database.json"
+JOBS_FILE = "jobs_database.json"
 
 def load_catalog():
     if not os.path.exists(DB_FILE):
@@ -54,6 +55,19 @@ def load_catalog():
 def save_catalog(catalog):
     with open(DB_FILE, "w") as f:
         json.dump(catalog, f, indent=4)
+
+def load_jobs():
+    if not os.path.exists(JOBS_FILE):
+        return []
+    try:
+        with open(JOBS_FILE, "r") as f:
+            return json.load(f)
+    except Exception:
+        return []
+
+def save_jobs(jobs):
+    with open(JOBS_FILE, "w") as f:
+        json.dump(jobs, f, indent=4)
 
 # --- HTML TEMPLATES ---
 
@@ -213,21 +227,27 @@ HTML_ADMIN = """
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BROOKSAUTOPLUG | Control Panel</title>
     <style>
-        :root { --primary: #0d6efd; --dark: #1e293b; --light: #f8fafc; --danger: #b91c1c; }
+        :root { --primary: #0d6efd; --dark: #1e293b; --light: #f8fafc; --danger: #b91c1c; --success: #25D366; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background-color: var(--light); }
         nav { background: #0f172a; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
         nav h1 { margin: 0; font-size: 1.5rem; }
         .logout-btn { color: #f8fafc; background: var(--danger); padding: 8px 15px; text-decoration: none; border-radius: 6px; font-weight: bold; }
-        .container { max-width: 1100px; margin: 40px auto; padding: 0 20px; display: grid; grid-template-columns: 1fr; gap: 30px; }
-        @media (min-width: 768px) { .container { grid-template-columns: 1fr 2fr; } }
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); height: fit-content; }
+        .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; display: grid; grid-template-columns: 1fr; gap: 30px; }
+        @media (min-width: 992px) { .container { grid-template-columns: 1fr 2fr; } }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); height: fit-content; margin-bottom: 20px; }
         .card h2 { margin-top: 0; color: #1e3a8a; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
-        input, textarea { width: 100%; padding: 10px; margin: 8px 0 15px 0; border-radius: 6px; border: 1px solid #cbd5e1; box-sizing: border-box; }
+        input, textarea, select { width: 100%; padding: 10px; margin: 8px 0 15px 0; border-radius: 6px; border: 1px solid #cbd5e1; box-sizing: border-box; font-size: 0.95rem; }
         .btn-submit { background-color: var(--primary); color: white; border: none; padding: 12px; font-weight: bold; border-radius: 6px; cursor: pointer; width: 100%; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; }
         th { background-color: #f1f5f9; color: #1e293b; }
-        .btn-delete { background-color: var(--danger); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; text-decoration: none; font-size: 0.85rem; }
+        .btn-delete { background-color: var(--danger); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; text-decoration: none; font-size: 0.8rem; }
+        .status-badge { padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8rem; text-transform: uppercase; }
+        .status-pending { background-color: #fef3c7; color: #d97706; }
+        .status-active { background-color: #dbeafe; color: #2563eb; }
+        .status-done { background-color: #dcfce7; color: #15803d; }
+        .inline-form { display: inline; }
+        .status-select { width: auto; padding: 4px; margin: 0; font-size: 0.8rem; }
     </style>
 </head>
 <body>
@@ -236,49 +256,112 @@ HTML_ADMIN = """
         <a href="/logout" class="logout-btn">Secure Log Out</a>
     </nav>
     <div class="container">
-        <div class="card">
-            <h2>Add New Stock Item</h2>
-            <form action="/admin/add-product" method="POST">
-                <label>Product Name</label>
-                <input type="text" name="name" placeholder="e.g. Front Shock Absorbers" required>
-                
-                <label>Price Description</label>
-                <input type="text" name="price" placeholder="e.g. 350,000 UGX" required>
-                
-                <label>Product Image Link (URL)</label>
-                <input type="url" name="image" placeholder="https://images.unsplash.com/..." required>
-                
-                <label>Short Description</label>
-                <textarea name="description" rows="3" placeholder="Specify brand compatibility..." required></textarea>
-                
-                <button type="submit" class="btn-submit">Publish to Catalog</button>
-            </form>
+        
+        <!-- SIDE PANEL FOR FORMS -->
+        <div>
+            <!-- ADD PRODUCT FORM -->
+            <div class="card">
+                <h2>Add New Stock Item</h2>
+                <form action="/admin/add-product" method="POST">
+                    <label>Product Name</label>
+                    <input type="text" name="name" required>
+                    <label>Price Description</label>
+                    <input type="text" name="price" placeholder="e.g. 180,000 UGX" required>
+                    <label>Image Link (URL)</label>
+                    <input type="url" name="image" required>
+                    <label>Short Description</label>
+                    <textarea name="description" rows="2" required></textarea>
+                    <button type="submit" class="btn-submit">Publish to Catalog</button>
+                </form>
+            </div>
+
+            <!-- LOG MOBILE REPAIR JOB FORM -->
+            <div class="card">
+                <h2>Log Mobile Repair Job</h2>
+                <form action="/admin/add-job" method="POST">
+                    <label>Customer Name / Contact</label>
+                    <input type="text" name="customer" placeholder="e.g. John +256..." required>
+                    <label>Car Model</label>
+                    <input type="text" name="car_model" placeholder="e.g. Toyota Wish 2012" required>
+                    <label>Location Around Town</label>
+                    <input type="text" name="location" placeholder="e.g. Kololo, Kampala" required>
+                    <label>Issue Description</label>
+                    <textarea name="issue" rows="2" placeholder="e.g. Alternator replacement" required></textarea>
+                    <button type="submit" class="btn-submit" style="background-color: var(--success);">Dispatch / Log Job</button>
+                </form>
+            </div>
         </div>
 
-        <div class="card">
-            <h2>Live Connected Catalog</h2>
-            <p>Managing live customer facing items completely offline from search spiders.</p>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Product Tracked</th>
-                        <th>Market Price</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for product in catalog %}
-                    <tr>
-                        <td><strong>{{ product.name }}</strong></td>
-                        <td><span style="color: var(--danger); font-weight: bold;">{{ product.price }}</span></td>
-                        <td>
-                            <a href="/admin/delete-product/{{ product.id }}" class="btn-delete" onclick="return confirm('Remove this part from public display?')">Delete</a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <!-- MAIN MANAGEMENT BOARDS -->
+        <div>
+            <!-- MOBILE SERVICES DISPATCH LOG -->
+            <div class="card">
+                <h2>Mobile Services Dispatch Log</h2>
+                <p>Tracks on-site mechanic assignments and location repairs around town.</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Car & Customer</th>
+                            <th>Location</th>
+                            <th>Issue</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for job in jobs %}
+                        <tr>
+                            <td><strong>{{ job.car_model }}</strong><br><small style="color: #64748b;">{{ job.customer }}</small></td>
+                            <td>{{ job.location }}</td>
+                            <td>{{ job.issue }}</td>
+                            <td>
+                                <span class="status-badge {% if job.status == 'pending' %}status-pending{% elif job.status == 'in-progress' %}status-active{% else %}status-done{% endif %}">
+                                    {{ job.status }}
+                                </span>
+                                <form action="/admin/update-job/{{ job.id }}" method="POST" class="inline-form">
+                                    <select name="status" class="status-select" onchange="this.form.submit()">
+                                        <option value="">-- Change --</option>
+                                        <option value="pending">Pending</option>
+                                        <option value="in-progress">In Progress</option>
+                                        <option value="completed">Completed</option>
+                                    </select>
+                                </form>
+                            </td>
+                            <td>
+                                <a href="/admin/delete-job/{{ job.id }}" class="btn-delete" onclick="return confirm('Remove this job record entirely?')">Delete</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- CATALOG MANAGEMENT GRID -->
+            <div class="card">
+                <h2>Live Connected Catalog</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Product Tracked</th>
+                            <th>Market Price</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in catalog %}
+                        <tr>
+                            <td><strong>{{ product.name }}</strong></td>
+                            <td><span style="color: var(--danger); font-weight: bold;">{{ product.price }}</span></td>
+                            <td>
+                                <a href="/admin/delete-product/{{ product.id }}" class="btn-delete" onclick="return confirm('Remove this part from public display?')">Delete</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
+
     </div>
 </body>
 </html>
@@ -361,16 +444,13 @@ def logout():
 @app.route('/admin-panel-secure-xyz')
 @login_required
 def admin_panel():
-    return render_template_string(HTML_ADMIN, catalog=load_catalog())
+    return render_template_string(HTML_ADMIN, catalog=load_catalog(), jobs=load_jobs())
 
 @app.route('/admin/add-product', methods=['POST'])
 @login_required
 def add_product():
     catalog = load_catalog()
-    
-    # Generate a unique simple ID based on timestamp
     new_id = int(time.time())
-    
     new_item = {
         "id": new_id,
         "name": request.form.get('name'),
@@ -378,7 +458,6 @@ def add_product():
         "image": request.form.get('image'),
         "description": request.form.get('description')
     }
-    
     catalog.append(new_item)
     save_catalog(catalog)
     return redirect(url_for('admin_panel'))
@@ -389,6 +468,46 @@ def delete_product(product_id):
     catalog = load_catalog()
     updated_catalog = [item for item in catalog if item['id'] != product_id]
     save_catalog(updated_catalog)
+    return redirect(url_for('admin_panel'))
+
+# --- MOBILE DISPATCH CONTROLLERS ---
+
+@app.route('/admin/add-job', methods=['POST'])
+@login_required
+def add_job():
+    jobs = load_jobs()
+    new_id = int(time.time())
+    new_job = {
+        "id": new_id,
+        "customer": request.form.get('customer'),
+        "car_model": request.form.get('car_model'),
+        "location": request.form.get('location'),
+        "issue": request.form.get('issue'),
+        "status": "pending"  # Jobs default to pending when first opened
+    }
+    jobs.append(new_job)
+    save_jobs(jobs)
+    return redirect(url_for('admin_panel'))
+
+@app.route('/admin/update-job/<int:job_id>', methods=['POST'])
+@login_required
+def update_job(job_id):
+    jobs = load_jobs()
+    new_status = request.form.get('status')
+    if new_status:
+        for job in jobs:
+            if job['id'] == job_id:
+                job['status'] = new_status
+                break
+        save_jobs(jobs)
+    return redirect(url_for('admin_panel'))
+
+@app.route('/admin/delete-job/<int:job_id>')
+@login_required
+def delete_job(job_id):
+    jobs = load_jobs()
+    updated_jobs = [job for job in jobs if job['id'] != job_id]
+    save_jobs(updated_jobs)
     return redirect(url_for('admin_panel'))
 
 if __name__ == '__main__':
