@@ -86,7 +86,6 @@ HTML_LAYOUT = """
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BROOKSAUTOPLUG | Premium Auto Parts & AI Diagnostics</title>
-    <!-- Include Particles.js via CDN -->
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
     <style>
         :root { 
@@ -192,7 +191,6 @@ HTML_LAYOUT = """
 </head>
 <body>
 
-    <!-- Background Particle Element Container -->
     <div id="particles-js"></div>
 
     <header>
@@ -202,12 +200,14 @@ HTML_LAYOUT = """
     
     <div class="container">
         <div class="grid">
-            <!-- AI DIAGNOSTICS ENGINE -->
             <div class="card">
                 <div>
                     <h2>AI Vehicle Diagnostic Engine</h2>
-                    <p>Describe the strange sound, mechanical issue, or dashboard warning lights. Our AI mechanic will analyze the problem instantly.</p>
-                    <textarea id="issue" rows="4" placeholder="Example: My Toyota Premio makes a grinding noise from the front wheels whenever I apply brakes..."></textarea>
+                    <p>Describe the strange sound, mechanical issue, or dashboard warning lights.</p>
+                    <small style="color: var(--primary); display: block; margin-bottom: 8px; font-weight: bold;">
+                        💡 You can type in English or Luganda (Okozesa Oluganda oba Lunglish)
+                    </small>
+                    <textarea id="issue" rows="4" placeholder="Example: Emmotoka yange ekola eddoboozi ery'okwekuba nga nnyiga break..."></textarea>
                 </div>
                 <div>
                     <button class="btn-ai" onclick="runDiagnostic()">Analyze Vehicle Issue</button>
@@ -215,7 +215,6 @@ HTML_LAYOUT = """
                 </div>
             </div>
 
-            <!-- DIRECT SPARE PARTS ORDER FORM -->
             <div class="card">
                 <form action="/order-parts" method="POST" style="height: 100%; display: flex; flex-direction: column; justify-content: space-between;">
                     <div>
@@ -228,7 +227,6 @@ HTML_LAYOUT = """
                 </form>
             </div>
 
-            <!-- CLIENT MOBILE REPAIR REQUEST FORM -->
             <div class="card">
                 <form action="/request-mobile-repair" method="POST" style="height: 100%; display: flex; flex-direction: column; justify-content: space-between;">
                     <div>
@@ -244,12 +242,11 @@ HTML_LAYOUT = """
             </div>
         </div>
 
-        <!-- PRODUCT CATALOG SECTION -->
         <h2 class="catalog-title">Our Stock Catalog</h2>
         <div class="catalog-grid">
             {% for product in catalog %}
             <div class="product-card">
-                <img class="product-image" src="{{ product.image }}" alt="{{ product.name }}">
+                <img class="product-image" src="{{ product.image }}" alt="{{ product.name }}" onerror="this.src='https://images.unsplash.com/photo-1486006920555-c77dce18193b?q=80&w=500';">
                 <div class="product-info">
                     <div>
                         <div class="product-name">{{ product.name }}</div>
@@ -299,7 +296,7 @@ HTML_LAYOUT = """
         async function runDiagnostic() {
             const desc = document.getElementById('issue').value;
             const resultDiv = document.getElementById('result');
-            if(!desc) return alert('Please tell us what your car is doing.');
+            if(!desc) return alert('Please tell us what your car is doing / Nyooza wetu ebizibu bya mmotoka.');
             resultDiv.style.display = "block";
             resultDiv.innerText = "BROOKSAUTOPLUG Brain analyzing your car diagnostics...";
             resultDiv.style.borderLeftColor = "#00f2fe";
@@ -390,6 +387,7 @@ HTML_ADMIN = """
         .inline-form { display: inline; }
         .status-select { width: auto; padding: 4px; margin: 0; font-size: 0.8rem; }
         .calc-box { background: #f0fdf4; border: 2px dashed #22c55e; padding: 15px; border-radius: 6px; margin-top: 15px; font-weight: bold; color: #166534; }
+        .btn-secondary { background-color: #64748b; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.85rem; margin-bottom: 10px; width: 100%; display: block; text-align: center; }
     </style>
 </head>
 <body>
@@ -399,25 +397,28 @@ HTML_ADMIN = """
     </nav>
     <div class="container">
         
-        <!-- SIDE PANEL FOR ADDS & CALCULATORS -->
         <div>
-            <!-- ADD PRODUCT FORM -->
             <div class="card">
                 <h2>Add New Stock Item</h2>
                 <form action="/admin/add-product" method="POST">
                     <label>Product Name</label>
-                    <input type="text" name="name" required>
+                    <input type="text" name="name" id="prod_name" placeholder="e.g. Toyota Premio Front Brake Pads" required>
+                    
+                    <button type="button" class="btn-secondary" onclick="generateAIDescription()">✨ Ask AI to Write Description</button>
+
+                    <label>Short Description</label>
+                    <textarea name="description" id="prod_desc" rows="3" placeholder="Provide details or click the AI button above..." required></textarea>
+
                     <label>Price Description</label>
                     <input type="text" name="price" placeholder="e.g. 180,000 UGX" id="form_calculated_price" required>
-                    <label>Image Link (URL)</label>
-                    <input type="url" name="image" required>
-                    <label>Short Description</label>
-                    <textarea name="description" rows="2" required></textarea>
+                    
+                    <label>Image Link (URL or leave as placeholder)</label>
+                    <input type="text" name="image" value="placeholder" placeholder="Paste link or leave as 'placeholder'" required>
+                    
                     <button type="submit" class="btn-submit">Publish to Catalog</button>
                 </form>
             </div>
 
-            <!-- WHOLESALE PRICE CONVERTER TOOL -->
             <div class="card" style="background-color: #f8fafc; border: 1px solid #e2e8f0;">
                 <h2>Price Converter (Markup Tool)</h2>
                 <p>Convert international distributor quotes to final consumer UGX retail pricing.</p>
@@ -448,7 +449,6 @@ HTML_ADMIN = """
                 {% endif %}
             </div>
 
-            <!-- LOG CONFIRMED REPAIR JOB MANUALLY -->
             <div class="card">
                 <h2>Log Internal Booking</h2>
                 <form action="/admin/add-job" method="POST">
@@ -465,9 +465,7 @@ HTML_ADMIN = """
             </div>
         </div>
 
-        <!-- MAIN MONITORING BOARDS -->
         <div>
-            <!-- MOBILE SERVICES TRACKING ARCHIVE -->
             <div class="card">
                 <h2>Mobile Services Monitoring Log</h2>
                 <table>
@@ -508,7 +506,6 @@ HTML_ADMIN = """
                 </table>
             </div>
 
-            <!-- CATALOG MANAGEMENT GRID -->
             <div class="card">
                 <h2>Live Connected Catalog</h2>
                 <table>
@@ -535,6 +532,35 @@ HTML_ADMIN = """
         </div>
 
     </div>
+
+    <script>
+        async function generateAIDescription() {
+            const partName = document.getElementById('prod_name').value;
+            const descTextArea = document.getElementById('prod_desc');
+            
+            if(!partName) {
+                return alert('Please enter a Product Name first before asking AI.');
+            }
+            
+            descTextArea.value = "AI is drafting a premium description...";
+            
+            try {
+                const response = await fetch('/admin/generate-description', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ part_name: partName })
+                });
+                const data = await response.json();
+                if(data.description) {
+                    descTextArea.value = data.description;
+                } else {
+                    descTextArea.value = "⚠️ Error: " + (data.error || "Could not generate description.");
+                }
+            } catch(err) {
+                descTextArea.value = "Error connecting to AI service.";
+            }
+        }
+    </script>
 </body>
 </html>
 """
@@ -559,9 +585,13 @@ def diagnose_car():
     prompt = f"""
     You are the expert diagnostic master mechanic for BROOKSAUTOPLUG Uganda. 
     A customer is describing this auto issue: "{user_description}".
-    Provide a professional breakdown pinpointing the exact parts likely failing, 
-    the safety severity, step-by-step repair strategy, and estimated prices for 
-    the replacement elements in Ugandan Shillings (UGX). Keep it bold and easy to scan.
+    
+    CRITICAL INSTRUCTION FOR LANGUAGE LOCALIZATION:
+    1. First, analyze the language the user wrote in.
+    2. If they used Luganda, "Lunglish" (mixed English/Luganda), or described an issue in a local way, you MUST respond completely in natural, warm, and professional Luganda.
+    3. If they wrote in standard English, respond in standard English.
+    4. Regardless of the language used, structure your diagnostic response clearly: pinpoint the exact spare parts likely failing, the safety severity level, a brief breakdown of what needs fixing, and estimated prices for the replacement items in Ugandan Shillings (UGX).
+    5. Keep it bold and easy to scan.
     """
     
     max_retries = 3
@@ -637,15 +667,40 @@ def admin_panel():
     current_calculation = None
     return render_template_string(HTML_ADMIN, catalog=load_catalog(), jobs=load_jobs(), last_calc=calc)
 
+@app.route('/admin/generate-description', methods=['POST'])
+@login_required
+def admin_generate_description():
+    if not client:
+        return jsonify({"error": "Gemini API client not configured."}), 500
+    data = request.json
+    part_name = data.get('part_name', '')
+    
+    prompt = f"""
+    You are writing a professional, high-end e-commerce product catalog snippet for BROOKSAUTOPLUG Uganda.
+    Write a concise, catchy, 1-to-2 sentence selling description for this automotive spare part: "{part_name}".
+    Focus on quality, durability, or vehicle performance compatibility. Do not include price fields or list raw specifications. Keep it clean.
+    """
+    try:
+        response = client.models.generate_content(model='gemini-2.5-flash', contents=prompt)
+        return jsonify({"description": response.text.strip()})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/admin/add-product', methods=['POST'])
 @login_required
 def add_product():
     catalog = load_catalog()
+    image_val = request.form.get('image', 'placeholder')
+    
+    # If they write placeholder or leave it default, give a fallback dark tech style image
+    if image_val.strip().lower() == 'placeholder' or not image_val:
+        image_val = "https://images.unsplash.com/photo-1486006920555-c77dce18193b?q=80&w=500"
+
     new_item = {
         "id": int(time.time()),
         "name": request.form.get('name'),
         "price": request.form.get('price'),
-        "image": request.form.get('image'),
+        "image": image_val,
         "description": request.form.get('description')
     }
     catalog.append(new_item)
